@@ -13,8 +13,8 @@ func FirstFilter() {
 		fmt.Println("Error: the number must be an odd integer greater than 1")
 		return
 	}
-
-	length := len(s)
+	runes := []rune(s)
+	length := len(runes)
 	for i := n; i >= 1; i -= 2 {
 		spaces := (n - i) / 2
 		for j := 0; j < spaces; j++ {
@@ -22,7 +22,7 @@ func FirstFilter() {
 		}
 
 		for j := 0; j < i; j++ {
-			fmt.Print(string(s[j%length]))
+			fmt.Print(string(runes[j%length]))
 		}
 		fmt.Println()
 	}

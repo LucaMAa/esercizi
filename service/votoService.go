@@ -1,33 +1,54 @@
 package service
 
 import (
+	"bufio"
 	"esercizi/model"
 	"fmt"
+	"math"
+	"os"
 	"sort"
+	"strconv"
+	"strings"
 )
 
 func VotoService() {
 	registro := CreaRegistro()
+	epsilon := 0.5
 
-	var matricola, voto, cfu int
-	for {
-		_, err := fmt.Scan(&matricola, &voto, &cfu)
-		if err != nil {
-			break
+	file, err := os.Open("voti.txt")
+	if err != nil {
+		fmt.Println("Errore nell'apertura del file:", err)
+		return
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		fields := strings.Fields(line)
+		if len(fields) != 3 {
+			fmt.Println("Errore nel formato della riga:", line)
+			continue
 		}
-		registro = AggiungiVoto(registro, matricola, voto, cfu)
+
+		matricola, _ := strconv.Atoi(fields[0])
+		voto, _ := strconv.ParseFloat(fields[1], 64)
+
+		cfu, _ := strconv.Atoi(fields[2])
+
+		registro = AggiungiVoto(registro, matricola, int(voto), cfu)
 	}
 
-	coppie := TrovaCoppieSimili(registro, 0.5)
+	if err := scanner.Err(); err != nil {
+		fmt.Println("Errore durante la lettura del file:", err)
+	}
+
+	coppie := TrovaCoppieSimili(registro, epsilon)
 
 	for _, coppia := range coppie {
 		fmt.Println(coppia[0], coppia[1])
 	}
-	fmt.Println("Coppie con medie simili trovate:", coppie)
-	for matricola := range registro {
-		ultimoVoto := Ultimo(registro, matricola)
-		fmt.Printf("Ultimo voto per matricola %d: %d CFU %d\n", matricola, ultimoVoto.Voto, ultimoVoto.CFU)
-	}
+
 }
 
 // CreaRegistro crea un registro vuoto
@@ -69,14 +90,14 @@ func MediaPesata(r model.Registro, matricola int) float64 {
 		return 0.0
 	}
 
-	sum := 0
+	sum := 0.0
 	sumCFU := 0
 	for _, voto := range voti {
-		sum += voto.Voto * voto.CFU
+		sum += float64(voto.Voto) * float64(voto.CFU)
 		sumCFU += voto.CFU
 	}
 
-	return float64(sum) / float64(sumCFU)
+	return sum / float64(sumCFU)
 }
 
 // TrovaCoppieSimili trova tutte le coppie di matricole con media pesata simile
@@ -96,7 +117,7 @@ func TrovaCoppieSimili(r model.Registro, epsilon float64) [][]int {
 			media1 := MediaPesata(r, matricola1)
 			media2 := MediaPesata(r, matricola2)
 
-			if media1-epsilon <= media2 && media2 <= media1+epsilon {
+			if math.Abs(media1-media2) <= epsilon {
 				coppia := []int{matricola1, matricola2}
 				coppie = append(coppie, coppia)
 			}
